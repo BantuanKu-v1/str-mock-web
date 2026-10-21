@@ -1,0 +1,31 @@
+@use "./global";
+@use "./sidebar";
+@use "./header";
+@use "./stat-card";
+@use "./status-badge";
+@use "./dashboard";
+@use "./application-table";
+@use "./status-modal";
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  &__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8fafc;
+  }
+
+  &__content {
+    flex: 1;
+    padding: 32px;
+  }
+
+  @media (max-width: 768px) {
+    &__content {
+      padding: 20px;
+    }
+  }
+}

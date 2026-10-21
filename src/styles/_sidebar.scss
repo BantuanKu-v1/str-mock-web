@@ -1,0 +1,121 @@
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+
+  display: flex;
+  flex-direction: column;
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 24px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  &__brand-icon {
+    width: 42px;
+    height: 42px;
+    background-color: #1e40af;
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  &__brand-info {
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    span {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+  }
+
+  &__content {
+    flex: 1;
+    padding: 28px 16px;
+  }
+
+  &__section-title {
+    display: block;
+    padding: 0 12px;
+    margin-bottom: 14px;
+
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #9ca3af;
+  }
+
+  &__navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__link {
+    width: 100%;
+    padding: 13px 14px;
+
+    display: flex;
+    align-items: center;
+
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: #f3f4f6;
+      color: #1e40af;
+    }
+
+    &--active {
+      background-color: #eff6ff;
+      color: #1e40af;
+      font-weight: 600;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    padding: 20px 24px;
+    border-top: 1px solid #f1f5f9;
+
+    span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    small {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+  }
+}

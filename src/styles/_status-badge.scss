@@ -1,0 +1,32 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 12px;
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--submitted {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  &--under_review {
+    background-color: #fffbeb;
+    color: #b45309;
+  }
+
+  &--approved {
+    background-color: #f0fdf4;
+    color: #15803d;
+  }
+
+  &--rejected {
+    background-color: #fef2f2;
+    color: #b91c1c;
+  }
+}

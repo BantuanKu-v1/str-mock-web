@@ -1,0 +1,91 @@
+.header {
+  width: 100%;
+  min-height: 100px;
+  padding: 24px 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    margin: 0;
+
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  &__description {
+    margin: 6px 0 0;
+
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+  }
+
+  &__admin {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  &__avatar {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #eff6ff;
+    border: 1px solid #dbeafe;
+    border-radius: 50%;
+
+    color: #1e40af;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  &__admin-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__admin-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  &__admin-role {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  @media (max-width: 768px) {
+    padding: 20px;
+
+    &__title {
+      font-size: 20px;
+    }
+
+    &__description {
+      font-size: 12px;
+    }
+
+    &__admin-info {
+      display: none;
+    }
+  }
+}
