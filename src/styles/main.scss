@@ -6,6 +6,7 @@
 @use "./dashboard";
 @use "./application-table";
 @use "./status-modal";
+@use "./login";
 
 .app-layout {
   display: flex;
