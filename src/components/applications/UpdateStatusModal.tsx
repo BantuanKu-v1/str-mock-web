@@ -8,7 +8,12 @@ import StatusBadge from "../ui/StatusBadge";
 type UpdateStatusModalProps = {
   application: Application;
   onClose: () => void;
-  onSave: (applicationId: string, status: ApplicationStatus) => void;
+  onSave: (
+      applicationId: string,
+      status: ApplicationStatus
+  ) => Promise<void>;
+  isSaving: boolean;
+  error: string;
 };
 
 const statusOptions: Record<ApplicationStatus, ApplicationStatus[]> = {
@@ -26,9 +31,11 @@ const statusLabels: Record<ApplicationStatus, string> = {
 };
 
 export default function UpdateStatusModal({
-    application,
-    onClose,
-    onSave,
+  application,
+  onClose,
+  onSave,
+  isSaving,
+  error,
 }: UpdateStatusModalProps) {
   const availableStatuses = statusOptions[application.status];
 
@@ -36,16 +43,27 @@ export default function UpdateStatusModal({
       availableStatuses[0] ?? ""
   );
 
+  // Handle saving the selected status
   const handleSave = () => {
-    if (!selectedStatus) return;
+    if (!selectedStatus || isSaving) return;
 
     if (!availableStatuses.includes(selectedStatus)) return;
 
-    onSave(application.id, selectedStatus);
+    void onSave(application.id, selectedStatus);
+  };
+
+  // Prevent closing the modal while saving
+  const handleClose = () => {
+    if (isSaving) return;
+
+    onClose();
   };
 
   return (
-      <div className="status-modal__overlay" onClick={onClose}>
+      <div
+          className="status-modal__overlay"
+          onClick={handleClose}
+      >
         <div
             className="status-modal"
             role="dialog"
@@ -54,12 +72,15 @@ export default function UpdateStatusModal({
             onClick={(event) => event.stopPropagation()}
         >
           <div className="status-modal__header">
-            <h2 id="status-modal-title">Update Application Status</h2>
+            <h2 id="status-modal-title">
+              Update Application Status
+            </h2>
 
             <button
                 type="button"
                 className="status-modal__close"
-                onClick={onClose}
+                onClick={handleClose}
+                disabled={isSaving}
                 aria-label="Close"
             >
               &times;
@@ -70,16 +91,19 @@ export default function UpdateStatusModal({
             <div className="status-modal__info">
               <div className="status-modal__info-item">
                 <span>Reference Number</span>
+
                 <strong>{application.reference_no}</strong>
               </div>
 
               <div className="status-modal__info-item">
                 <span>Applicant</span>
+
                 <strong>{application.applicant_name}</strong>
               </div>
 
               <div className="status-modal__info-item">
                 <span>Current Status</span>
+
                 <StatusBadge status={application.status} />
               </div>
             </div>
@@ -98,6 +122,7 @@ export default function UpdateStatusModal({
                               event.target.value as ApplicationStatus
                           )
                       }
+                      disabled={isSaving}
                   >
                     {availableStatuses.map((status) => (
                         <option key={status} value={status}>
@@ -112,13 +137,23 @@ export default function UpdateStatusModal({
                   be updated.
                 </p>
             )}
+
+            {error && (
+                <div
+                    className="login-page__error"
+                    role="alert"
+                >
+                  {error}
+                </div>
+            )}
           </div>
 
           <div className="status-modal__footer">
             <button
                 type="button"
                 className="status-modal__cancel"
-                onClick={onClose}
+                onClick={handleClose}
+                disabled={isSaving}
             >
               Cancel
             </button>
@@ -128,9 +163,9 @@ export default function UpdateStatusModal({
                     type="button"
                     className="status-modal__save"
                     onClick={handleSave}
-                    disabled={!selectedStatus}
+                    disabled={!selectedStatus || isSaving}
                 >
-                  Save Changes
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </button>
             )}
           </div>
