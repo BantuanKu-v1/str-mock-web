@@ -8,7 +8,10 @@ import type {
 
 type ApplicationsPageProps = {
   applications: Application[];
-  onUpdateStatus: (applicationId: string, status: ApplicationStatus) => void;
+  onUpdateStatus: (
+      applicationId: string,
+      status: ApplicationStatus
+  ) => Promise<void>;
 };
 
 export default function ApplicationsPage({
@@ -18,27 +21,63 @@ export default function ApplicationsPage({
   const [selectedApplication, setSelectedApplication] =
       useState<Application | null>(null);
 
-  const handleSaveStatus = (
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Open the Update Status modal
+  const handleOpenModal = (application: Application) => {
+    setError("");
+    setSelectedApplication(application);
+  };
+
+  // Close the Update Status modal
+  const handleCloseModal = () => {
+    if (isSaving) return;
+
+    setSelectedApplication(null);
+    setError("");
+  };
+
+  // Save the new status through the backend API
+  const handleSaveStatus = async (
       applicationId: string,
       status: ApplicationStatus
-  ) => {
-    onUpdateStatus(applicationId, status);
-    setSelectedApplication(null);
+  ): Promise<void> => {
+    if (isSaving) return;
+
+    setError("");
+    setIsSaving(true);
+
+    try {
+      await onUpdateStatus(applicationId, status);
+
+      setSelectedApplication(null);
+    } catch (error) {
+      setError(
+          error instanceof Error
+              ? error.message
+              : "Failed to update application status."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
       <div className="applications-page">
         <ApplicationTable
             applications={applications}
-            onUpdateStatus={setSelectedApplication}
+            onUpdateStatus={handleOpenModal}
         />
 
         {selectedApplication && (
             <UpdateStatusModal
                 key={selectedApplication.id}
                 application={selectedApplication}
-                onClose={() => setSelectedApplication(null)}
+                onClose={handleCloseModal}
                 onSave={handleSaveStatus}
+                isSaving={isSaving}
+                error={error}
             />
         )}
       </div>
