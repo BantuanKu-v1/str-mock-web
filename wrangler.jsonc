@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "str-mock-api",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-21",
+  "d1_databases": [
+    {
+      "binding": "str_mock_db",
+      "database_name": "str-mock-db",
+      "database_id": "5f165326-d71f-449e-ae35-932fd8f15e64",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
