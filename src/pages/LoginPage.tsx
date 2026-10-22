@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 import { login } from "../services/authService";
 
 type LoginPageProps = {
@@ -7,14 +7,14 @@ type LoginPageProps = {
 };
 
 export default function LoginPage({
-  onLoginSuccess
+    onLoginSuccess
 }: LoginPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setError("");
@@ -42,12 +42,7 @@ export default function LoginPage({
               STR
             </div>
 
-            <h1>STR Mock</h1>
-            <p>Administration Portal</p>
-          </div>
-
-          <div className="login-page__heading">
-            <h2>Administrator Login</h2>
+            <h1>Administrator Login</h1>
             <p>Sign in to manage STR applications.</p>
           </div>
 
@@ -98,6 +93,31 @@ export default function LoginPage({
               {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
+
+          <div className="login-page__docs">
+            <div className="login-page__docs-content">
+              <span className="login-page__docs-label">
+                DEVELOPER RESOURCES
+              </span>
+
+              <h3>API Documentation</h3>
+
+              <p>
+                Explore the API endpoints and integration
+                guidelines for third-party applications.
+              </p>
+            </div>
+
+            <a
+                href="/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="login-page__docs-link"
+            >
+              View API Documentation
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
 
           <div className="login-page__footer">
             For Academic Demonstration Only
