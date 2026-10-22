@@ -8,6 +8,9 @@ type DashboardLayoutProps = {
   onNavigate: (page: SidebarPage) => void;
   title: string;
   description?: string;
+  adminUsername: string;
+  onLogout: () => void;
+  isLoggingOut: boolean;
   children: ReactNode;
 };
 
@@ -16,6 +19,9 @@ export default function DashboardLayout({
     onNavigate,
     title,
     description,
+    adminUsername,
+    onLogout,
+    isLoggingOut,
     children
 }: DashboardLayoutProps) {
   return (
@@ -29,6 +35,9 @@ export default function DashboardLayout({
           <Header
               title={title}
               description={description}
+              adminUsername={adminUsername}
+              onLogout={onLogout}
+              isLoggingOut={isLoggingOut}
           />
 
           <main className="app-layout__content">
