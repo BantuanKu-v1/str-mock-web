@@ -1,10 +1,10 @@
-import type { StrApplicationStatus } from "../../types/applications";
+import type { ApplicationStatus } from "../../types/applications";
 
 type StatusBadgeProps = {
-  status: StrApplicationStatus;
+  status: ApplicationStatus;
 };
 
-const statusLabels: Record<StrApplicationStatus, string> = {
+const statusLabels: Record<ApplicationStatus, string> = {
   submitted: "Submitted",
   under_review: "Under Review",
   approved: "Approved",
