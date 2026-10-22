@@ -4,8 +4,9 @@ import type { SidebarPage } from "./components/layout/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import ApplicationsPage from "./pages/ApplicationsPage";
 import LoginPage from "./pages/LoginPage";
-import { checkSession } from "./services/authService";
+import {checkSession, logout} from "./services/authService";
 import {
+  ApiError,
   getApplications,
   updateApplicationStatus,
 } from "./services/applicationService";
@@ -13,6 +14,7 @@ import type {
   Application,
   ApplicationStatus,
 } from "./types/applications";
+import ApiDocPage from "./pages/ApiDocPage.tsx";
 
 const pageInfo: Record<
     SidebarPage,
@@ -29,10 +31,10 @@ const pageInfo: Record<
     title: "Applications",
     description: "View and manage submitted STR applications.",
   },
-  "api-docs": {
-    title: "API Documentation",
-    description: "Integration guidelines for third-party systems.",
-  },
+  // "api-docs": {
+  //   title: "API Documentation",
+  //   description: "Integration guidelines for third-party systems.",
+  // },
 };
 
 function App() {
@@ -45,6 +47,16 @@ function App() {
   const [adminUsername, setAdminUsername] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [sessionError, setSessionError] = useState("");
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+
+  const clearAdminState = () => {
+    setAdminUsername(null);
+    setApplications([]);
+    setApplicationsError("");
+    setActivePage("dashboard");
+  }
 
   // Check administrator session when the application starts
   useEffect(() => {
@@ -96,13 +108,18 @@ function App() {
           setApplications(data);
         }
       } catch (error) {
-        if (!cancelled) {
-          setApplicationsError(
-              error instanceof Error
-                  ? error.message
-                  : "Failed to load applications."
-          );
+        if (cancelled) return;
+
+        if (error instanceof  ApiError && error.status === 401) {
+          clearAdminState();
+          return;
         }
+
+        setApplicationsError(
+            error instanceof Error
+                ? error.message
+                : "Failed to load applications"
+        );
       } finally {
         if (!cancelled) {
           setIsLoadingApplications(false);
@@ -129,6 +146,28 @@ function App() {
 
     setAdminUsername(username);
     setSessionError("");
+    setLogoutError("");
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    setLogoutError("");
+
+    try {
+      await logout();
+
+      clearAdminState();
+    } catch (error) {
+      setLogoutError(
+          error instanceof Error
+              ? error.message
+              : "Failed to log out"
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   // Update application status through Hono API
@@ -136,19 +175,31 @@ function App() {
       applicationId: string,
       newStatus: ApplicationStatus
   ): Promise<void> => {
-    const updatedApplication = await updateApplicationStatus(
-        applicationId,
-        newStatus
-    );
+    try {
+      const updatedApplication = await updateApplicationStatus(
+          applicationId,
+          newStatus
+      );
 
-    setApplications((previousApplications) =>
-        previousApplications.map((application) =>
-            application.id === applicationId
-                ? updatedApplication
-                : application
-        )
-    );
+      setApplications((previousApplications) =>
+          previousApplications.map((application) =>
+              application.id === applicationId
+                  ? updatedApplication
+                  : application
+          )
+      );
+    } catch (error) {
+      if (error instanceof  ApiError && error.status === 401) {
+        clearAdminState();
+      }
+
+      throw error;
+    }
   };
+
+  if (window.location.pathname === "/docs") {
+    return <ApiDocPage />;
+  }
 
   // Display loading state while checking session
   if (isCheckingSession) {
@@ -190,7 +241,16 @@ function App() {
           onNavigate={setActivePage}
           title={currentPage.title}
           description={currentPage.description}
+          adminUsername={adminUsername}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
       >
+        {logoutError && (
+            <div className="applications-page" role="alert">
+              <p>{logoutError}</p>
+            </div>
+        )}
+
         {isLoadingApplications ? (
             <div className="applications-page">
               <p>Loading applications...</p>
@@ -214,13 +274,10 @@ function App() {
                 onUpdateStatus={handleUpdateStatus}
             />
         ) : (
-            <div className="page-placeholder">
-              <h2>API Documentation</h2>
-
-              <p>
-                API integration documentation will be implemented later.
-              </p>
-            </div>
+            <ApplicationsPage
+                applications={applications}
+                onUpdateStatus={handleUpdateStatus}
+            />
         )}
       </DashboardLayout>
   );
