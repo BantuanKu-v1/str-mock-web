@@ -1,4 +1,4 @@
-export type SidebarPage = "dashboard" | "applications" | "api-docs";
+export type SidebarPage = "dashboard" | "applications";
 
 type SidebarProps = {
   activePage: SidebarPage;
