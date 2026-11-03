@@ -15,5 +15,15 @@
       "database_id": "5f165326-d71f-449e-ae35-932fd8f15e64",
       "migrations_dir": "migrations"
     }
+  ],
+  "ratelimits": [
+    {
+      "name": "STR_ELIGIBILITY_RATE_LIMITER",
+      "namespace_id": "2001",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
   ]
 }
