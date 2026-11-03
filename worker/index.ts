@@ -3,6 +3,7 @@ import { AppEnv } from "./types";
 import applications from "./routes/applications";
 import admin from "./routes/admin";
 import adminAuth from "./routes/adminAuth";
+import programs from "./routes/programs";
 
 const app = new Hono<AppEnv>();
 
@@ -51,5 +52,8 @@ app.route("/api/v1/admin", admin);
 
 // Admin authentication endpoints
 app.route("/api/v1/admin/auth", adminAuth);
+
+// Eligibility criteria endpoints
+app.route("/api/v1/programs", programs);
 
 export default app;
