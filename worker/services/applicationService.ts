@@ -1,8 +1,9 @@
-import { D1Database } from "@cloudflare/workers-types";
-import {
-  type CreateApplicationPayload,
-  type DbApplication,
-  type ApplicationStatus,
+import type { D1Database } from "@cloudflare/workers-types";
+
+import type {
+  CreateApplicationPayload,
+  DbApplication,
+  ApplicationStatus,
 } from "../types/application";
 
 // Retrieve an application using its external application ID
@@ -12,7 +13,12 @@ export async function getApplicationByExternalId(
     externalApplicationId: string
 ): Promise<DbApplication | null> {
   return db
-      .prepare(`SELECT * FROM str_applications WHERE client_id = ? AND external_application_id = ?`)
+      .prepare(
+          `SELECT *
+          FROM str_applications
+          WHERE client_id = ?
+            AND external_application_id = ?`
+      )
       .bind(clientId, externalApplicationId)
       .first<DbApplication>();
 }
@@ -24,7 +30,12 @@ export async function getApplicationById(
     applicationId: string
 ): Promise<DbApplication | null> {
   return db
-      .prepare(`SELECT * FROM str_applications WHERE client_id = ? AND id = ?`)
+      .prepare(
+          `SELECT *
+          FROM str_applications
+          WHERE client_id = ?
+            AND id = ?`
+      )
       .bind(clientId, applicationId)
       .first<DbApplication>();
 }
@@ -43,16 +54,19 @@ export async function createApplication(
       .slice(0, 12)
       .toUpperCase()}`;
 
+  const applicationData = JSON.stringify(data.applicationData);
+
   await db
       .prepare(
           `INSERT INTO str_applications (
-                    id,
-                    client_id,
-                    external_application_id,
-                    reference_no,
-                    applicant_name,
-                    application_year
-          ) VALUES (?, ?, ?, ?, ?, ?)`
+              id,
+              client_id,
+              external_application_id,
+              reference_no,
+              applicant_name,
+              application_year,
+              application_data
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
           id,
@@ -60,7 +74,8 @@ export async function createApplication(
           data.externalApplicationId,
           referenceNo,
           data.applicantName,
-          data.applicationYear
+          data.applicationYear,
+          applicationData
       )
       .run();
 
@@ -80,8 +95,8 @@ export async function getAllApplications(
   const result = await db
       .prepare(
           `SELECT *
-       FROM str_applications
-       ORDER BY submitted_at DESC, id DESC`
+          FROM str_applications
+          ORDER BY submitted_at DESC, id DESC`
       )
       .all<DbApplication>();
 
@@ -96,8 +111,8 @@ export async function getAdminApplicationById(
   return db
       .prepare(
           `SELECT *
-       FROM str_applications
-       WHERE id = ?`
+          FROM str_applications
+          WHERE id = ?`
       )
       .bind(applicationId)
       .first<DbApplication>();
@@ -112,9 +127,9 @@ export async function updateApplicationStatus(
   await db
       .prepare(
           `UPDATE str_applications
-       SET status = ?,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`
+          SET status = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?`
       )
       .bind(status, applicationId)
       .run();
