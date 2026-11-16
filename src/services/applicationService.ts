@@ -1,7 +1,4 @@
-import type {
-  Application,
-  ApplicationStatus,
-} from "../types/applications";
+import type { Application, ApplicationStatus } from "../types/applications.ts";
 
 const API_BASE_URL = "/api/v1/admin";
 
@@ -38,12 +35,29 @@ async function parseResponse<T>(
 }
 
 export async function getApplications(): Promise<Application[]> {
-  const response = await fetch(`${API_BASE_URL}/applications`, {
-    method: "GET",
-    credentials: "include",
-  });
+  const response = await fetch(
+      `${API_BASE_URL}/applications`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+  );
 
   return parseResponse<Application[]>(response);
+}
+
+export async function getApplicationById(
+    applicationId: string
+): Promise<Application> {
+  const response = await fetch(
+      `${API_BASE_URL}/applications/${encodeURIComponent(applicationId)}`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+  );
+
+  return parseResponse<Application>(response);
 }
 
 export async function updateApplicationStatus(
