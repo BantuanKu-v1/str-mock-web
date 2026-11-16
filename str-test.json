@@ -1,0 +1,45 @@
+{
+  "externalApplicationId": "bantuanku-str-test-001",
+  "applicantName": "Test Applicant",
+  "applicationYear": 2027,
+  "applicationData": {
+    "schemaVersion": 1,
+    "applicant": {
+      "fullName": "Test Applicant",
+      "identificationNo": "900101010001",
+      "dateOfBirth": "1990-01-01",
+      "gender": "male",
+      "citizenship": "Malaysian",
+      "maritalStatus": "single"
+    },
+    "contact": {
+      "mobilePhone": "0123456789",
+      "homePhone": null,
+      "email": "test@example.com"
+    },
+    "address": {
+      "addressLine1": "123 Jalan Test",
+      "addressLine2": null,
+      "postcode": "50000",
+      "city": "Kuala Lumpur",
+      "stateTerritory": "Kuala Lumpur",
+      "countryCode": "MY"
+    },
+    "financial": {
+      "monthlyPersonalIncome": 1500,
+      "monthlyHouseholdIncome": 1500,
+      "incomeSource": "Employment"
+    },
+    "employment": {
+      "occupation": "Retail Assistant",
+      "employmentStatus": "employed",
+      "isStudent": false,
+      "studyMode": null,
+      "institutionType": null
+    },
+    "household": {
+      "members": [],
+      "informationComplete": true
+    }
+  }
+}
