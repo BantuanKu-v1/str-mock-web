@@ -1,10 +1,17 @@
-export type StrApplicationStatus = "submitted" | "under_review" | "approved" | "rejected";
+import type { StrApplicationData } from "../schemas/applicationSchema";
+
+export type StrApplicationStatus =
+    | "submitted"
+    | "under_review"
+    | "approved"
+    | "rejected";
 
 // Application submission request from a third-party system
 export interface CreateApplicationRequest {
   externalApplicationId: string;
   applicantName: string;
   applicationYear: number;
+  applicationData: StrApplicationData;
 }
 
 // API-facing application record
@@ -15,6 +22,7 @@ export interface StrApplication {
   referenceNo: string;
   applicantName: string;
   applicationYear: number;
+  applicationData: StrApplicationData | null;
   status: StrApplicationStatus;
   submittedAt: string;
   updatedAt: string;
@@ -44,6 +52,7 @@ export interface DbApplication {
   reference_no: string;
   applicant_name: string;
   application_year: number;
+  application_data: string | null;
   status: StrApplicationStatus;
   submitted_at: string;
   updated_at: string;
