@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../types";
+import type { DbApplication } from "../types/application";
 import { apiKeyAuth } from "../middleware/auth";
 import { createApplicationSchema } from "../schemas/applicationSchema";
 import {
@@ -19,6 +20,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
 
   if (a === null || b === null) return false;
   if (typeof a !== typeof b) return false;
+
   if (typeof a !== "object" || typeof b !== "object") {
     return false;
   }
@@ -34,6 +36,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
 
   const objA = a as Record<string, unknown>;
   const objB = b as Record<string, unknown>;
+
   const keysA = Object.keys(objA);
   const keysB = Object.keys(objB);
 
@@ -45,6 +48,92 @@ function deepEqual(a: unknown, b: unknown): boolean {
               deepEqual(objA[key], objB[key])
       )
   );
+}
+
+// Normalize Cloudflare D1 timestamps to ISO 8601 UTC
+function toIsoTimestamp(value: string): string {
+  const timestamp = value.trim();
+
+  // D1 commonly stores timestamps as YYYY-MM-DD HH:MM:SS
+  const sqliteTimestamp = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})(\.\d+)?$/;
+  const match = sqliteTimestamp.exec(timestamp);
+
+  const normalized = match
+      ? `${match[1]}T${match[2]}${match[3] ?? ""}Z`
+      : timestamp;
+
+  // Require an explicit timezone to avoid ambiguous timestamps
+  if (
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
+          normalized
+      )
+  ) {
+    throw new Error("Invalid application timestamp format");
+  }
+
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("Invalid application timestamp");
+  }
+
+  return parsed.toISOString();
+}
+
+// Check whether an existing application matches the request
+function matchesExistingApplication(
+    existing: DbApplication,
+    data: {
+      applicantName: string;
+      applicationYear: number;
+      applicationData: unknown;
+    }
+): boolean {
+  if (
+      existing.applicant_name !== data.applicantName ||
+      existing.application_year !== data.applicationYear ||
+      existing.application_data === null
+  ) {
+    return false;
+  }
+
+  try {
+    return deepEqual(
+        JSON.parse(existing.application_data),
+        data.applicationData
+    );
+  } catch {
+    return false;
+  }
+}
+
+// Build a consistent submission confirmation
+function toSubmissionConfirmation(application: DbApplication) {
+  return {
+    id: application.id,
+    referenceNo: application.reference_no,
+    status: application.status,
+    submittedAt: toIsoTimestamp(application.submitted_at),
+  };
+}
+
+// Build a recovery response
+function toRecoveryResponse(application: DbApplication) {
+  return {
+    ...toSubmissionConfirmation(application),
+    externalApplicationId: application.external_application_id,
+    updatedAt: toIsoTimestamp(application.updated_at),
+  };
+}
+
+// Build a status response
+function toStatusResponse(application: DbApplication) {
+  return {
+    id: application.id,
+    referenceNo: application.reference_no,
+    status: application.status,
+    updatedAt: toIsoTimestamp(application.updated_at),
+  };
 }
 
 // Submit an application
@@ -81,7 +170,7 @@ applications.post("/", async (c) => {
   const db = c.env.str_mock_db;
 
   try {
-    // Check for an existing application
+    // Check whether the external application ID already exists
     const existing = await getApplicationByExternalId(
         db,
         clientId,
@@ -89,25 +178,7 @@ applications.post("/", async (c) => {
     );
 
     if (existing) {
-      let sameApplicationData = false;
-
-      if (existing.application_data !== null) {
-        try {
-          sameApplicationData = deepEqual(
-              JSON.parse(existing.application_data),
-              data.applicationData
-          );
-        } catch {
-          sameApplicationData = false;
-        }
-      }
-
-      // The same external ID must represent the same submission
-      if (
-          existing.applicant_name !== data.applicantName ||
-          existing.application_year !== data.applicationYear ||
-          !sameApplicationData
-      ) {
+      if (!matchesExistingApplication(existing, data)) {
         return c.json(
             {
               success: false,
@@ -120,15 +191,11 @@ applications.post("/", async (c) => {
       return c.json({
         success: true,
         message: "Application already exists",
-        data: {
-          id: existing.id,
-          referenceNo: existing.reference_no,
-          status: existing.status,
-          submittedAt: existing.submitted_at,
-        },
+        data: toSubmissionConfirmation(existing),
       });
     }
 
+    // Create a new STR application
     const application = await createApplication(
         db,
         clientId,
@@ -139,30 +206,54 @@ applications.post("/", async (c) => {
         {
           success: true,
           message: "Application submitted successfully",
-          data: {
-            id: application.id,
-            referenceNo: application.reference_no,
-            status: application.status,
-            submittedAt: application.submitted_at,
-          },
+          data: toSubmissionConfirmation(application),
         },
         201
     );
   } catch (error) {
-    // Handle concurrent submissions using the same external ID
+    // Another concurrent request may have inserted the same ID
     const isUniqueConstraintError =
         error instanceof Error &&
         /UNIQUE constraint failed/i.test(error.message);
 
     if (isUniqueConstraintError) {
-      return c.json(
-          {
-            success: false,
-            message:
-                "Application submission conflict. Please retry using the same application data.",
-          },
-          409
-      );
+      try {
+        // Re-fetch the record created by the competing request
+        const existing = await getApplicationByExternalId(
+            db,
+            clientId,
+            data.externalApplicationId
+        );
+
+        if (existing && matchesExistingApplication(existing, data)) {
+          return c.json({
+            success: true,
+            message: "Application already exists",
+            data: toSubmissionConfirmation(existing),
+          });
+        }
+
+        return c.json(
+            {
+              success: false,
+              message: "External application ID is already in use",
+            },
+            409
+        );
+      } catch (lookupError) {
+        console.error(
+            "Failed to resolve concurrent submission:",
+            lookupError
+        );
+
+        return c.json(
+            {
+              success: false,
+              message: "Unable to resolve application submission conflict",
+            },
+            500
+        );
+      }
     }
 
     console.error("Application submission failed:", error);
@@ -171,6 +262,62 @@ applications.post("/", async (c) => {
         {
           success: false,
           message: "Failed to submit application",
+        },
+        500
+    );
+  }
+});
+
+// Retrieve an application using its external application ID
+// Used by BantuanKu to recover uncertain submissions
+applications.get("/external/:externalApplicationId", async (c) => {
+  const externalApplicationId = c.req.param(
+      "externalApplicationId"
+  );
+
+  const clientId = c.get("clientId");
+
+  if (!externalApplicationId.trim()) {
+    return c.json(
+        {
+          success: false,
+          message: "External application ID is required",
+        },
+        400
+    );
+  }
+
+  try {
+    const application = await getApplicationByExternalId(
+        c.env.str_mock_db,
+        clientId,
+        externalApplicationId
+    );
+
+    if (!application) {
+      return c.json(
+          {
+            success: false,
+            message: "Application not found",
+          },
+          404
+      );
+    }
+
+    return c.json({
+      success: true,
+      data: toRecoveryResponse(application),
+    });
+  } catch (error) {
+    console.error(
+        "Failed to retrieve application by external ID:",
+        error
+    );
+
+    return c.json(
+        {
+          success: false,
+          message: "Failed to retrieve application",
         },
         500
     );
@@ -201,15 +348,13 @@ applications.get("/:id/status", async (c) => {
 
     return c.json({
       success: true,
-      data: {
-        id: application.id,
-        referenceNo: application.reference_no,
-        status: application.status,
-        updatedAt: application.updated_at,
-      },
+      data: toStatusResponse(application),
     });
   } catch (error) {
-    console.error("Failed to retrieve application status:", error);
+    console.error(
+        "Failed to retrieve application status:",
+        error
+    );
 
     return c.json(
         {
