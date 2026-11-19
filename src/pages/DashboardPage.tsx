@@ -4,10 +4,12 @@ import type { Application } from "../types/applications";
 
 type DashboardPageProps = {
   applications: Application[];
+  onViewDetails: (application: Application) => void;
 };
 
 export default function DashboardPage({
-    applications
+  applications,
+  onViewDetails,
 }: DashboardPageProps) {
   const statistics = {
     total: applications.length,
@@ -76,6 +78,7 @@ export default function DashboardPage({
           <ApplicationTable
               applications={recentApplications}
               title="Recent Applications"
+              onViewDetails={onViewDetails}
           />
         </div>
       </div>
