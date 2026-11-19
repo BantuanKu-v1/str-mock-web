@@ -4,7 +4,9 @@ import type { SidebarPage } from "./components/layout/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import ApplicationsPage from "./pages/ApplicationsPage";
 import LoginPage from "./pages/LoginPage";
-import {checkSession, logout} from "./services/authService";
+import ApiDocPage from "./pages/ApiDocPage";
+import ApplicationDetailsPage from "./pages/ApplicationDetailsPage";
+import { checkSession, logout } from "./services/authService";
 import {
   ApiError,
   getApplications,
@@ -14,7 +16,6 @@ import type {
   Application,
   ApplicationStatus,
 } from "./types/applications";
-import ApiDocPage from "./pages/ApiDocPage.tsx";
 
 const pageInfo: Record<
     SidebarPage,
@@ -39,6 +40,7 @@ const pageInfo: Record<
 
 function App() {
   const [activePage, setActivePage] = useState<SidebarPage>("dashboard");
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoadingApplications, setIsLoadingApplications] = useState(false);
@@ -55,8 +57,9 @@ function App() {
     setAdminUsername(null);
     setApplications([]);
     setApplicationsError("");
+    setSelectedApplicationId(null);
     setActivePage("dashboard");
-  }
+  };
 
   // Check administrator session when the application starts
   useEffect(() => {
@@ -110,7 +113,7 @@ function App() {
       } catch (error) {
         if (cancelled) return;
 
-        if (error instanceof  ApiError && error.status === 401) {
+        if (error instanceof ApiError && error.status === 401) {
           clearAdminState();
           return;
         }
@@ -170,6 +173,23 @@ function App() {
     }
   };
 
+  // Open application details
+  const handleViewDetails = (application: Application) => {
+    setSelectedApplicationId(application.id);
+  };
+
+  // Return to the Applications page
+  const handleBackToApplications = () => {
+    setSelectedApplicationId(null);
+    setActivePage("applications");
+  };
+
+  // Navigate between sidebar pages
+  const handleNavigate = (page: SidebarPage) => {
+    setSelectedApplicationId(null);
+    setActivePage(page);
+  };
+
   // Update application status through Hono API
   const handleUpdateStatus = async (
       applicationId: string,
@@ -189,7 +209,7 @@ function App() {
           )
       );
     } catch (error) {
-      if (error instanceof  ApiError && error.status === 401) {
+      if (error instanceof ApiError && error.status === 401) {
         clearAdminState();
       }
 
@@ -235,12 +255,20 @@ function App() {
 
   const currentPage = pageInfo[activePage];
 
+  const selectedApplication = applications.find(
+      (application) => application.id === selectedApplicationId
+  );
+
   return (
       <DashboardLayout
           activePage={activePage}
-          onNavigate={setActivePage}
-          title={currentPage.title}
-          description={currentPage.description}
+          onNavigate={handleNavigate}
+          title={selectedApplicationId ? "Application Details" : currentPage.title}
+          description={
+            selectedApplicationId
+                ? "Review submitted STR application information."
+                : currentPage.description
+          }
           adminUsername={adminUsername}
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
@@ -266,17 +294,34 @@ function App() {
                 Retry
               </button>
             </div>
+        ) : selectedApplicationId ? (
+            selectedApplication ? (
+                <ApplicationDetailsPage
+                    application={selectedApplication}
+                    onBack={handleBackToApplications}
+                    onUpdateStatus={handleUpdateStatus}
+                />
+            ) : (
+                <div className="applications-page">
+                  <p>Application not found.</p>
+
+                  <button
+                      type="button"
+                      onClick={handleBackToApplications}
+                  >
+                    Back to Applications
+                  </button>
+                </div>
+            )
         ) : activePage === "dashboard" ? (
-            <DashboardPage applications={applications} />
-        ) : activePage === "applications" ? (
-            <ApplicationsPage
+            <DashboardPage
                 applications={applications}
-                onUpdateStatus={handleUpdateStatus}
+                onViewDetails={handleViewDetails}
             />
         ) : (
             <ApplicationsPage
                 applications={applications}
-                onUpdateStatus={handleUpdateStatus}
+                onViewDetails={handleViewDetails}
             />
         )}
       </DashboardLayout>
