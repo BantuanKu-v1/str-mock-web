@@ -29,6 +29,10 @@
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 16px;
+
+    > * {
+      min-width: 0;
+    }
   }
 
   @media (max-width: 1400px) {
@@ -44,8 +48,15 @@
   }
 
   @media (max-width: 600px) {
+    gap: 24px;
+
+    &__section {
+      gap: 16px;
+    }
+
     &__stats {
       grid-template-columns: 1fr;
+      gap: 12px;
     }
   }
 }
