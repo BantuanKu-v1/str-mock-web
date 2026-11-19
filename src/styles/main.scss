@@ -8,6 +8,8 @@
 @use "./status-modal";
 @use "./login";
 @use "./api-docs";
+@use "./application-details";
+@use "./application-details-page";
 
 .app-layout {
   display: flex;
