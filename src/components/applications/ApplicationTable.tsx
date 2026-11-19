@@ -4,13 +4,13 @@ import StatusBadge from "../ui/StatusBadge";
 type ApplicationTableProps = {
   applications: Application[];
   title?: string;
-  onUpdateStatus?: (application: Application) => void;
+  onViewDetails?: (application: Application) => void;
 };
 
 export default function ApplicationTable({
   applications,
   title = "Applications",
-  onUpdateStatus,
+  onViewDetails,
 }: ApplicationTableProps) {
   const formatDate = (date: string) => {
     return new Date(date.replace(" ", "T") + "Z").toLocaleString(
@@ -38,7 +38,7 @@ export default function ApplicationTable({
               <th>Application Year</th>
               <th>Submitted At</th>
               <th>Status</th>
-              {onUpdateStatus && <th>Action</th>}
+              {onViewDetails && <th>Action</th>}
             </tr>
             </thead>
 
@@ -46,7 +46,7 @@ export default function ApplicationTable({
             {applications.length === 0 ? (
                 <tr>
                   <td
-                      colSpan={onUpdateStatus ? 6 : 5}
+                      colSpan={onViewDetails ? 6 : 5}
                       className="application-table__empty"
                   >
                     No applications found.
@@ -69,22 +69,15 @@ export default function ApplicationTable({
                         <StatusBadge status={application.status} />
                       </td>
 
-                      {onUpdateStatus && (
+                      {onViewDetails && (
                           <td>
-                            {application.status === "approved" ||
-                            application.status === "rejected" ? (
-                                <span className="application-table__final">
-                                  Finalized
-                                </span>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="application-table__action"
-                                    onClick={() => onUpdateStatus(application)}
-                                >
-                                  Update Status
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                className="application-table__action"
+                                onClick={() => onViewDetails(application)}
+                            >
+                              View Details
+                            </button>
                           </td>
                       )}
                     </tr>
