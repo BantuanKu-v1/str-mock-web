@@ -6,6 +6,28 @@ type HeaderProps = {
   isLoggingOut: boolean;
 };
 
+const buildTime = import.meta.env.VITE_BUILD_TIME;
+
+const formatDeploymentTime = (value: string | undefined) => {
+  if (!value) return "Not available";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not available";
+  }
+
+  return date.toLocaleString("en-MY", {
+    timeZone: "Asia/Kuala_Lumpur",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 export default function Header({
     title,
     description,
@@ -26,6 +48,16 @@ export default function Header({
         </div>
 
         <div className="header__admin">
+          <div className="header__deployment">
+          <span className="header__deployment-label">
+            Last Deployed
+          </span>
+
+            <span className="header__deployment-time">
+            {formatDeploymentTime(buildTime)}
+          </span>
+          </div>
+
           <div className="header__avatar">
             {adminUsername.charAt(0).toUpperCase()}
           </div>
