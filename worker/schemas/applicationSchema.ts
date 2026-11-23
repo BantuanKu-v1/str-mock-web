@@ -5,7 +5,10 @@ const nullableText = (maxLength: number) =>
 
 const nullableBoolean = z.boolean().nullable();
 const nullableMoney = z.number().nonnegative().nullable();
+const nullableInteger = z.number().int().nonnegative().nullable();
+
 const dateSchema = z.iso.date();
+const nullableDate = dateSchema.nullable();
 
 const applicantSchema = z.strictObject({
   fullName: z.string().trim().min(1).max(150),
@@ -49,7 +52,7 @@ const householdMemberSchema = z.strictObject({
   fullName: z.string().trim().min(1).max(150),
   identificationNo: nullableText(12),
   relationship: z.string().trim().min(1).max(50),
-  dateOfBirth: dateSchema.nullable(),
+  dateOfBirth: nullableDate,
   gender: nullableText(30),
   citizenship: nullableText(50),
   isDependent: nullableBoolean,
@@ -68,7 +71,18 @@ const householdSchema = z.strictObject({
   informationComplete: z.literal(true),
 });
 
-const preliminaryEligibilitySchema = z.strictObject({
+export const supportingDocumentSchema = z.strictObject({
+  documentId: z.uuid(),
+  requirementType: z.string().trim().min(1).max(100),
+  documentType: z.string().trim().min(1).max(100),
+  originalFilename: z.string().trim().min(1).max(255),
+  mimeType: z.string().trim().min(1).max(100),
+  fileSizeBytes: nullableInteger,
+  issuedAt: nullableDate,
+  expiresAt: nullableDate,
+});
+
+export const preliminaryEligibilitySchema = z.strictObject({
   status: z.enum([
     "potentially_eligible",
     "potentially_ineligible",
@@ -87,6 +101,10 @@ export const strApplicationDataSchema = z.strictObject({
   financial: financialSchema,
   employment: employmentSchema,
   household: householdSchema,
+  supportingDocuments: z
+      .array(supportingDocumentSchema)
+      .max(100)
+      .optional(),
   preliminaryEligibility: preliminaryEligibilitySchema.optional(),
 });
 
@@ -118,3 +136,6 @@ export const updateApplicationStatusSchema = z.object({
 
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 export type StrApplicationData = z.infer<typeof strApplicationDataSchema>;
+export type SupportingDocumentData = z.infer<typeof supportingDocumentSchema>;
+export type PreliminaryEligibilityData = z.infer<typeof preliminaryEligibilitySchema>;
+export type PreliminaryEligibilityStatus = PreliminaryEligibilityData["status"];
