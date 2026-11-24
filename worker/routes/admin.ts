@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { AppEnv } from "../types";
-import { type ApplicationStatus } from "../types/application";
+import type { AppEnv } from "../types";
+import type { ApplicationStatus } from "../types/application";
 import { adminAuth } from "../middleware/auth";
 import { updateApplicationStatusSchema } from "../schemas/applicationSchema";
 import {
@@ -8,6 +8,9 @@ import {
   getAdminApplicationById,
   updateApplicationStatus,
 } from "../services/applicationService";
+import {
+  sendApplicationStatusWebhook,
+} from "../services/webhookService";
 
 const admin = new Hono<AppEnv>();
 
@@ -28,7 +31,9 @@ const allowedTransitions: Record<
 // Retrieve all applications
 admin.get("/applications", async (c) => {
   try {
-    const applications = await getAllApplications(c.env.str_mock_db);
+    const applications = await getAllApplications(
+        c.env.str_mock_db
+    );
 
     return c.json({
       success: true,
@@ -111,7 +116,28 @@ admin.patch("/applications/:id/status", async (c) => {
     const updatedApplication = await updateApplicationStatus(
         c.env.str_mock_db,
         applicationId,
-        newStatus
+        newStatus,
+        currentStatus
+    );
+
+    // Handle unsuccessful conditional status updates
+    if (!updatedApplication) {
+      return c.json(
+          {
+            success: false,
+            message: "Application status has changed. Please refresh and try again.",
+          },
+          409
+      );
+    }
+
+    // Notify BantuanKu after the status is successfully updated.
+    // Keep the Worker alive until webhook delivery completes.
+    c.executionCtx.waitUntil(
+        sendApplicationStatusWebhook(
+            c.env,
+            updatedApplication
+        )
     );
 
     return c.json({
