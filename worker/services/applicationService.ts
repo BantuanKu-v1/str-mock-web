@@ -122,17 +122,22 @@ export async function getAdminApplicationById(
 export async function updateApplicationStatus(
     db: D1Database,
     applicationId: string,
-    status: ApplicationStatus
+    status: ApplicationStatus,
+    expectedStatus: ApplicationStatus
 ): Promise<DbApplication | null> {
-  await db
+  return db
       .prepare(
           `UPDATE str_applications
-          SET status = ?,
-              updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?`
+           SET status = ?,
+               updated_at = STRFTIME('%Y-%m-%dT%H:%M:%fZ', 'now')
+           WHERE id = ?
+             AND status = ?
+           RETURNING *`
       )
-      .bind(status, applicationId)
-      .run();
-
-  return getAdminApplicationById(db, applicationId);
+      .bind(
+          status,
+          applicationId,
+          expectedStatus
+      )
+      .first<DbApplication>();
 }
