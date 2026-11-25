@@ -64,7 +64,12 @@ export async function sendApplicationStatusWebhook(
 
   if (!webhookUrl || !webhookSecret) {
     console.error(
-        "[STR Webhook] Missing webhook configuration"
+        "[STR Webhook] Missing webhook configuration",
+        {
+          applicationId: application.id,
+          hasWebhookUrl: Boolean(webhookUrl),
+          hasWebhookSecret: Boolean(webhookSecret),
+        }
     );
 
     return false;
@@ -76,6 +81,8 @@ export async function sendApplicationStatusWebhook(
     controller.abort();
   }, WEBHOOK_TIMEOUT_MS);
 
+  let stage = "validate_endpoint";
+
   try {
     const endpoint = new URL(webhookUrl);
 
@@ -83,7 +90,25 @@ export async function sendApplicationStatusWebhook(
       throw new Error("Webhook endpoint must use HTTPS");
     }
 
+    // Construct and validate the webhook payload
+    stage = "build_payload";
+
     const payload = buildStatusWebhookPayload(application);
+
+    // Log the delivery attempt without exposing the webhook secret
+    console.info(
+        "[STR Webhook] Sending application status update",
+        {
+          applicationId: application.id,
+          referenceNo: application.reference_no,
+          status: application.status,
+          endpoint: `${endpoint.origin}${endpoint.pathname}`,
+          updatedAt: payload.updatedAt,
+        }
+    );
+
+    // Send the webhook request to BantuanKu
+    stage = "send_request";
 
     const response = await fetch(endpoint.toString(), {
       method: "POST",
@@ -93,8 +118,24 @@ export async function sendApplicationStatusWebhook(
       },
       body: JSON.stringify(payload),
       signal: controller.signal,
-      redirect: "error",
+      redirect: "manual",
     });
+
+    // stage = "validate_response";
+
+    // Reject unexpected redirects without following them
+    if (response.status >= 300 && response.status < 400) {
+      console.error(
+          "[STR Webhook] Unexpected redirect response",
+          {
+            applicationId: application.id,
+            status: application.status,
+            httpStatus: response.status,
+          },
+      );
+
+      return false;
+    }
 
     if (!response.ok) {
       console.error(
@@ -103,6 +144,7 @@ export async function sendApplicationStatusWebhook(
             applicationId: application.id,
             status: application.status,
             httpStatus: response.status,
+            httpStatusText: response.statusText,
           }
       );
 
@@ -113,26 +155,34 @@ export async function sendApplicationStatusWebhook(
         "[STR Webhook] Status synchronization completed",
         {
           applicationId: application.id,
+          referenceNo: application.reference_no,
           status: application.status,
+          httpStatus: response.status,
         }
     );
 
     return true;
+
   } catch (error) {
     console.error(
         "[STR Webhook] Failed to deliver application status",
         {
           applicationId: application.id,
           status: application.status,
+          stage,
           reason: controller.signal.aborted
               ? "Request timed out"
               : error instanceof Error
                   ? error.name
                   : "Unknown error",
+          message: error instanceof Error
+              ? error.message
+              : String(error),
         }
     );
 
     return false;
+
   } finally {
     clearTimeout(timeout);
   }
