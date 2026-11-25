@@ -13,7 +13,8 @@
       "binding": "str_mock_db",
       "database_name": "str-mock-db",
       "database_id": "5f165326-d71f-449e-ae35-932fd8f15e64",
-      "migrations_dir": "migrations"
+      "migrations_dir": "migrations",
+      "remote": true
     }
   ],
   "ratelimits": [
