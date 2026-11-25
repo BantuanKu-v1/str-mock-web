@@ -155,6 +155,16 @@ applications.post("/", async (c) => {
   const validation = createApplicationSchema.safeParse(body);
 
   if (!validation.success) {
+    console.error(
+        "[STR Application] Request validation failed",
+        {
+          issues: validation.error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            code: issue.code,
+          })),
+        }
+    );
+
     return c.json(
         {
           success: false,
